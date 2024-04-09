@@ -81,6 +81,14 @@ public class StoreUserService implements DefaultService<StoreUserDTO, StoreUser,
         costumerRepository.save(user.getCostumer());//
         return mapper.toDTO(user, StoreUserDTO.class);
     }
+    
+    public StoreUserDTO update(Long key, StoreUser user) {
+//        StoreUser user = mapper.toEntity(obj, StoreUser.class);
+        user.setId(key);
+        repository.save(user);
+        costumerRepository.save(user.getCostumer());//
+        return mapper.toDTO(user, StoreUserDTO.class);
+    }
 
     public StoreUserDTO update(String username, StoreUserDTO obj) {
         StoreUser user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Such user was not found!"));

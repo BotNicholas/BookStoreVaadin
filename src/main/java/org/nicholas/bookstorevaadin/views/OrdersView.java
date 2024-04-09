@@ -84,7 +84,7 @@ public class OrdersView extends FlexLayout {
             content.setWidth("70%");
             Grid<Order> ordersGrid = new Grid<>(Order.class, false);
 
-            ordersGrid.addComponentColumn(order -> order.getCustomer() != null ? new Anchor("costumers/", order.getCustomer().getName()) : new Span("Removed!")).setHeader("Costumer").setAutoWidth(true);
+            ordersGrid.addComponentColumn(order -> order.getCustomer() != null ? new Anchor("/costumers?filter=" + order.getCustomer().getId(), order.getCustomer().getName()) : new Span("Removed!")).setHeader("Costumer").setAutoWidth(true);
             ordersGrid.addColumn(Order::getOrderDate).setHeader("Order date").setAutoWidth(true);
             ordersGrid.addColumn(order -> order.getOrderValue()+" MDL").setHeader("Order value").setAutoWidth(true);
 

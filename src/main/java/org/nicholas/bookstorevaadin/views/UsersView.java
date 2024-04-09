@@ -106,7 +106,7 @@ public class UsersView extends FlexLayout {
         }).setHeader("Username");
 
         usersGrid.addColumn(StoreUser::getRoles).setHeader("Roles:");
-        usersGrid.addComponentColumn(storeUser -> new Anchor("costumers/", storeUser.getCostumer().getName())).setHeader("Costumer");
+        usersGrid.addComponentColumn(storeUser -> new Anchor("/costumers?filter=" + storeUser.getCostumer().getId(), storeUser.getCostumer().getName())).setHeader("Costumer");
 //        usersGrid.addColumn(storeUser -> new Anchor("costumers/", storeUser.getCostumer().getName())).setHeader("Costumer");
         usersGrid.addColumn(
                         LitRenderer.<StoreUser> of("<vaadin-avatar style='margin-right: 10px;' img=\"/images/users/${item.pictureUrl}\" name=\"${item.userName}\" alt=\"Portrait of ${item.userName}\"></vaadin-avatar>").withProperty("pictureUrl", StoreUser::getImage)

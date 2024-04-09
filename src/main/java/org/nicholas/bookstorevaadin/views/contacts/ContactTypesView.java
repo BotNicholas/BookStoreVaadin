@@ -13,10 +13,13 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import org.nicholas.bookstorevaadin.model.BookCategory;
+import org.nicholas.bookstorevaadin.model.Costumer;
 import org.nicholas.bookstorevaadin.model.RefContactType;
 import org.nicholas.bookstorevaadin.repository.BookCategoryRepository;
 import org.nicholas.bookstorevaadin.repository.RefContactTypeRepository;
@@ -29,9 +32,8 @@ import java.util.List;
 
 @Route(value = "contact-types", layout = MainView.class)
 @RolesAllowed({"ROLE_MANAGER", "ROLE_ADMIN"})
-public class ContactTypesView extends FlexLayout {
+public class ContactTypesView extends FlexLayout implements BeforeEnterObserver {
     private RefContactTypeRepository repository;
-    private List<RefContactType> contactTypes;
 
     private StoreUserDetails principal;
     private AuthenticationService authenticationService;
@@ -44,12 +46,26 @@ public class ContactTypesView extends FlexLayout {
         principal = (StoreUserDetails) authenticationService.getCurrentPrincipal();
         principalRoles = principal.getAuthorities().stream().map(grantedAuthority -> grantedAuthority.getAuthority()).toList();
 
-        this.contactTypes = repository.findAll();
-
         setFlexDirection(FlexDirection.COLUMN);
         setAlignItems(Alignment.CENTER);
         setSizeFull();
+    }
 
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        String filter = event.getLocation().getQueryParameters().getSingleParameter("filter").orElse("");
+        List<RefContactType> contactTypes = repository.findAll();
+
+        if (StringUtils.hasText(filter) && filter.matches("^\\d+$")) {
+            contactTypes = List.of(repository.findById(Integer.parseInt(filter)).get());
+        }
+
+        drawContactTypes(contactTypes);
+    }
+
+    private void drawContactTypes(List<RefContactType> contactTypes) {
+        removeAll();
         add(new H1("All Contact types:"));
 
         Grid<RefContactType> contactTypeGrid = new Grid<>(RefContactType.class, false);
@@ -186,4 +202,5 @@ public class ContactTypesView extends FlexLayout {
             getUI().ifPresent(ui -> ui.getPage().reload());
         });
     }
+
 }

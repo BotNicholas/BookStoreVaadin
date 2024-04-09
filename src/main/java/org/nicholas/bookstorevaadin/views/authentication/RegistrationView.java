@@ -71,7 +71,6 @@ public class RegistrationView extends FlexLayout {
         this.userService = userService;
         this.mapper = mapper;
 
-
         getElement().getThemeList().add(Lumo.DARK);
         setSizeFull();
         setFlexDirection(FlexDirection.COLUMN);

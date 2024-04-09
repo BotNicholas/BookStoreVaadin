@@ -148,6 +148,7 @@ public class OrderItemsDetail extends VerticalLayout {
         NumberField amount = new NumberField("Amount: ");
         amount.setStep(1.0);
         amount.setMin(1.0);
+        Double oldAmount;
 
         HorizontalLayout buttons = new HorizontalLayout();
         buttons.setJustifyContentMode(JustifyContentMode.CENTER);
@@ -164,9 +165,11 @@ public class OrderItemsDetail extends VerticalLayout {
             if (orderItem.getItemComment() != null)
                 comment.setValue(orderItem.getItemComment());
             amount.setValue(orderItem.getAmount()*1.0);
+            oldAmount = orderItem.getAmount()*1.0;
             save.setText("Edit!");
+        } else {
+            oldAmount = 0.0;
         }
-
 
 
         FlexLayout layout = new FlexLayout();
@@ -178,8 +181,9 @@ public class OrderItemsDetail extends VerticalLayout {
         save.addClickListener(event -> {
             binder.forField(books).withValidator(b -> b!=null, "Specify the book!").bind(OrderItem::getBook, OrderItem::setBook);
             binder.forField(price).withValidator(p -> p>=1, "Price must be >= 1").bind(OrderItem::getItemAgreedPrice, OrderItem::setItemAgreedPrice);
-            binder.forField(amount).withValidator(p -> p>=1, "Amount must be at least 1").bind(orderItem1 -> orderItem1.getAmount().doubleValue(), (orderItem1, aDouble) -> orderItem1.setAmount(aDouble.intValue()));
-
+            binder.forField(amount).withValidator(a -> a>=1, "Amount must be at least 1").bind(orderItem1 -> orderItem1.getAmount().doubleValue(), (orderItem1, aDouble) -> orderItem1.setAmount(aDouble.intValue()));
+            if (orderItem!=null)
+                binder.forField(amount).withValidator(a -> a<=oldAmount, "You can only decrease books amount!").bind(orderItem1 -> orderItem1.getAmount().doubleValue(), (orderItem1, aDouble) -> orderItem1.setAmount(aDouble.intValue()));
 
             BinderValidationStatus validation = binder.validate();
 

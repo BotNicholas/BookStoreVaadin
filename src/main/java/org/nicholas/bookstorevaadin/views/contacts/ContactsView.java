@@ -100,7 +100,7 @@ public class ContactsView extends FlexLayout implements BeforeEnterObserver {
         contactGrid.getStyle().setMarginLeft("auto");
         contactGrid.getStyle().setMarginRight("auto");
 
-        contactGrid.addComponentColumn(contact -> new Anchor("contact-types/", contact.getContactType().getContactTypeDescription())).setHeader("Contact type");
+        contactGrid.addComponentColumn(contact -> new Anchor("/contact-types?filter="+contact.getContactType().getCode(), contact.getContactType().getContactTypeDescription())).setHeader("Contact type");
         contactGrid.addColumn(Contact::getFirstname).setHeader("Firstname");
         contactGrid.addColumn(Contact::getLastname).setHeader("Lastname");
         contactGrid.addColumn(Contact::getWorkPhone).setHeader("Work phone");

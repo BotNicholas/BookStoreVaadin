@@ -7,23 +7,19 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.LitRenderer;
-import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.Lumo;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
-import org.nicholas.bookstorevaadin.model.Book;
-import org.nicholas.bookstorevaadin.model.Cart;
-import org.nicholas.bookstorevaadin.model.Order;
-import org.nicholas.bookstorevaadin.model.OrderItem;
+import jakarta.mail.MessagingException;
+import org.nicholas.bookstorevaadin.model.*;
 import org.nicholas.bookstorevaadin.repository.OrderRepository;
 import org.nicholas.bookstorevaadin.security.details.StoreUserDetails;
 import org.nicholas.bookstorevaadin.service.AuthenticationService;
+import org.nicholas.bookstorevaadin.service.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.text.DecimalFormat;
 import java.util.Date;
 
 @Route(value = "cart")
@@ -36,13 +32,24 @@ public class CartView extends FlexLayout {
     private Button home;
     private FlexLayout cartContent;
     private OrderRepository orderRepository;
+    private H4 total;
+    private DecimalFormat format;
 
     private StoreUserDetails principal;
+//    @Autowired
+//    private MailService mailService;
 
-    public CartView(@Autowired Cart cart, AuthenticationService authenticationService, OrderRepository orderRepository) {
+    public CartView(@Autowired Cart cart, AuthenticationService authenticationService, OrderRepository orderRepository) throws MessagingException {
         this.cart = cart;
         this.authenticationService = authenticationService;
         this.orderRepository = orderRepository;
+        format = new DecimalFormat("##.##");
+
+
+//        this.mailService = mailService;
+//        mailService.sendMail("botannicolai22@gmail.com", new MailStructure("Greeting", "Hello!"));
+
+
 
         getElement().getThemeList().add(Lumo.DARK);
 
@@ -95,6 +102,42 @@ public class CartView extends FlexLayout {
                 numberField.setStep(1);
                 numberField.setMin(1);
                 numberField.setValue(Double.valueOf(cart.getBookMap().get(book)));
+//                numberField.setReadOnly(true);
+                numberField.addBlurListener(event -> {
+                    NumberField source = (NumberField) event.getSource();
+                    if (source.getValue()!=null && source.getValue() > 0) {
+//                        numberField.setValue(numberField.getValue()-1.0);
+                        cart.getBookMap().put(book, source.getValue().intValue());
+                        total.setText("Total: " + format.format(cart.getTotal()) + " MDL");
+                    } else {
+                        cart.getBookMap().remove(book);
+                        cartGrid.getDataProvider().refreshAll();
+                        if (cartGrid.getDataProvider().size(new Query<>()) == 0) {
+                            content.removeAll();
+                            drawChart(content);
+                            total.setText("");
+//                            content.add(new H3(new Span("Cart is empty! "), new Anchor("/books", "Choose something!")));
+//                            content.setWidth("max-content");
+                        }
+                    }
+                });
+//                numberField.addValueChangeListener(event -> {
+//                    if (event.getValue() > 0) {
+////                        numberField.setValue(numberField.getValue()-1.0);
+//                        cart.getBookMap().put(book, event.getValue().intValue());
+//                        total.setText("Total: " + format.format(cart.getTotal()) + " MDL");
+//                    } else {
+//                        cart.getBookMap().remove(book);
+//                        cartGrid.getDataProvider().refreshAll();
+//                        if (cartGrid.getDataProvider().size(new Query<>()) == 0) {
+//                            content.removeAll();
+//                            drawChart(content);
+//                            total.setText("");
+////                            content.add(new H3(new Span("Cart is empty! "), new Anchor("/books", "Choose something!")));
+////                            content.setWidth("max-content");
+//                        }
+//                    }
+//                });
 
                 Button minus = new Button("-");
 
@@ -103,17 +146,20 @@ public class CartView extends FlexLayout {
                 plus.addClickListener(event -> {
                     numberField.setValue(numberField.getValue()+1.0);
                     cart.getBookMap().put(book, cart.getBookMap().get(book)+1);
+                    total.setText("Total: " + format.format(cart.getTotal()) + " MDL");
                 });
                 minus.addClickListener(event -> {
                     if (numberField.getValue() > 1) {
                         numberField.setValue(numberField.getValue()-1.0);
                         cart.getBookMap().put(book, cart.getBookMap().get(book)-1);
+                        total.setText("Total: " + format.format(cart.getTotal()) + " MDL");
                     } else {
                         cart.getBookMap().remove(book);
                         cartGrid.getDataProvider().refreshAll();
                         if (cartGrid.getDataProvider().size(new Query<>()) == 0) {
                             content.removeAll();
                             drawChart(content);
+                            total.setText("");
 //                            content.add(new H3(new Span("Cart is empty! "), new Anchor("/books", "Choose something!")));
 //                            content.setWidth("max-content");
                         }
@@ -126,12 +172,17 @@ public class CartView extends FlexLayout {
             cartGrid.setItems(cart.getBookMap().keySet());
             cartGrid.setAllRowsVisible(true);
 //            cartGrid.setHeight("250px");
-            cartGrid.setWidth("80%");
+//            cartGrid.setWidth("80%");
             content.setAlignSelf(Alignment.CENTER, cartGrid);
             content.add(cartGrid);
+            content.add(new Hr());
+            total = new H4("Total: " + format.format(cart.getTotal()) + " MDL");
+            content.add(total);
+            content.add(new Hr());
             content.add(new H3(new Anchor("/books", "get more...")));
 
             Button buy = new Button("Buy");
+            buy.getStyle().setMarginTop("20px");
             content.add(buy);
 
             buy.addClickListener(event -> {

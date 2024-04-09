@@ -15,6 +15,8 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -32,11 +34,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.print.DocFlavor;
+import java.util.ArrayList;
 import java.util.List;
 
 @Route(value = "costumers", layout = MainView.class)
 @RolesAllowed({"ROLE_MANAGER", "ROLE_ADMIN"})
-public class CostumerView extends FlexLayout {
+public class CostumerView extends FlexLayout implements BeforeEnterObserver {
     private CostumerRepository costumerRepository;
     private StoreUserRepository userRepository;
 //    @Autowired
@@ -60,7 +63,18 @@ public class CostumerView extends FlexLayout {
         setHeight("100%");
         setFlexWrap(FlexWrap.WRAP);
 
+//        List<Costumer> costumers = costumerRepository.findAll();
+//        drawForAdministration(costumers);
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        String filter = event.getLocation().getQueryParameters().getSingleParameter("filter").orElse("");
         List<Costumer> costumers = costumerRepository.findAll();
+
+        if (StringUtils.hasText(filter) && filter.matches("^\\d+$")) {
+            costumers = List.of(costumerRepository.findById(Integer.parseInt(filter)).get());
+        }
 
         drawForAdministration(costumers);
     }
@@ -106,40 +120,40 @@ public class CostumerView extends FlexLayout {
                     editDialogue.open();
                 });
                 return edit;
-            }).setHeader("Edit");
+            }).setHeader("Edit").setAutoWidth(true);
 
-            costumersGrid.addComponentColumn(costumer -> {
-                Button delete = new Button("Delete");
-                delete.addClickListener(event -> {
-                    Dialog deleteDialogue = new Dialog("Delete Costumer Confirmation");
-
-                    addDeleteDialogueLayout(deleteDialogue, costumer);
-
-                    deleteDialogue.open();
-                });
-
-                return delete;
-            }).setHeader("Delete");
+//            costumersGrid.addComponentColumn(costumer -> {
+//                Button delete = new Button("Delete");
+//                delete.addClickListener(event -> {
+//                    Dialog deleteDialogue = new Dialog("Delete Costumer Confirmation");
+//
+//                    addDeleteDialogueLayout(deleteDialogue, costumer);
+//
+//                    deleteDialogue.open();
+//                });
+//
+//                return delete;
+//            }).setHeader("Delete");
         }
 
 
-        Button add = new Button("Add new");
-
-        add(add);
-        add.getStyle().setMarginTop("10px");
-        setAlignSelf(Alignment.END, add);
-
-        add.setWidth("max-content");
-        add.getStyle().setMarginRight("5%");
-        add.getStyle().setPadding("5px 10px");
-
-        add.addClickListener(event -> {
-            Dialog addDialog = new Dialog("Add new Costumer");
-
-            addAddOrEditDialogueLayout(addDialog, null);
-
-            addDialog.open();
-        });
+//        Button add = new Button("Add new");
+//
+//        add(add);
+//        add.getStyle().setMarginTop("10px");
+//        setAlignSelf(Alignment.END, add);
+//
+//        add.setWidth("max-content");
+//        add.getStyle().setMarginRight("5%");
+//        add.getStyle().setPadding("5px 10px");
+//
+//        add.addClickListener(event -> {
+//            Dialog addDialog = new Dialog("Add new Costumer");
+//
+//            addAddOrEditDialogueLayout(addDialog, null);
+//
+//            addDialog.open();
+//        });
     }
 
     private void addAddOrEditDialogueLayout(Dialog editDialogue, Costumer costumer){
@@ -244,6 +258,8 @@ public class CostumerView extends FlexLayout {
             getUI().ifPresent(ui -> ui.getPage().reload());
         });
     }
+
+
 
 //    @Transactional
 //    protected void deleteCostumerForForItsUser(Costumer costumer) {

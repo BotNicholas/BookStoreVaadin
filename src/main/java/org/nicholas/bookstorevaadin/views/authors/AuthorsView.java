@@ -183,7 +183,7 @@ public class AuthorsView extends FlexLayout {
 
         TextField firstName = new TextField("Firstname: ");
         TextField lastName = new TextField("Lastname: ");
-        TextField initials = new TextField("Initials: ");
+//        TextField initials = new TextField("Initials: ");
         DatePicker birthDate = new DatePicker("Birth date: ");
         ComboBox<String> gender = new ComboBox<>("Gender: ", "M", "F", "U");
         gender.setValue("U");
@@ -218,7 +218,7 @@ public class AuthorsView extends FlexLayout {
         if (author != null){
             firstName.setValue(author.getFirstname());
             lastName.setValue(author.getLastname());
-            initials.setValue(author.getInitials());
+//            initials.setValue(author.getInitials());
             birthDate.setValue(author.getBirthDate());
             gender.setValue(author.getGender());
             contactDetails.setValue(author.getContactDetails());
@@ -231,14 +231,20 @@ public class AuthorsView extends FlexLayout {
 
         FlexLayout layout = new FlexLayout();
         layout.setFlexDirection(FlexDirection.COLUMN);
-        layout.add(firstName, lastName, initials, birthDate, gender, contactDetails, otherDetails, photo, buttons);
+        layout.add(firstName, lastName);
+
+//        if (author!=null)
+//            layout.add(initials);
+
+        layout.add(birthDate, gender, contactDetails, otherDetails, photo, buttons);
 
         editDialogue.add(layout);
 
         save.addClickListener(event -> {
             binder.forField(firstName).withValidator(s -> StringUtils.hasText(s), "Firstname can not be empty!").bind(Author::getFirstname, Author::setFirstname);
             binder.forField(lastName).withValidator(s -> StringUtils.hasText(s), "Lastname can not be empty!").bind(Author::getLastname, Author::setLastname);
-            binder.forField(initials).withValidator(s -> StringUtils.hasText(s) && s.equals(s.toUpperCase()) && s.length()==2, "Initials - is two letters in uppercase!").bind(Author::getInitials, Author::setInitials);
+//            if (author!=null)
+//                binder.forField(initials).withValidator(s -> StringUtils.hasText(s) && s.equals(s.toUpperCase()) && s.length()==2, "Initials - is two letters in uppercase!").bind(Author::getInitials, Author::setInitials);
             binder.forField(birthDate).withValidator(d -> d!=null, "Specify The date!")
                     .withValidator(d -> {
                         LocalDate now = LocalDate.now();
@@ -254,10 +260,13 @@ public class AuthorsView extends FlexLayout {
 
             //Saving file if present
             if (!validation.hasErrors()) {
-                Author newAuthor = new Author(firstName.getValue(), lastName.getValue(), initials.getValue(), birthDate.getValue(), gender.getValue(), contactDetails.getValue(), otherDetails.getValue());
+                String initials = String.valueOf(firstName.getValue().toUpperCase().charAt(0)) +
+                                     String.valueOf(lastName.getValue().toUpperCase().charAt(0));
+                Author newAuthor = new Author(firstName.getValue(), lastName.getValue(), initials, birthDate.getValue(), gender.getValue(), contactDetails.getValue(), otherDetails.getValue());
 
                 if (author!=null) {
                     newAuthor.setId(author.getId());
+//                    newAuthor.setInitials(initials.getValue());
                     newAuthor.setImage(author.getImage());
                 }
 

@@ -30,6 +30,10 @@ public class Cart {
         this.bookMap = bookMap;
     }
 
+    public Double getTotal() {
+        return bookMap.keySet().stream().map(book -> book.getRecommendedPrice()*bookMap.get(book)).reduce((d1, d2) -> d1+d2).orElse(0D);
+    }
+
     @Override
     public String toString() {
         return "Cart{" +

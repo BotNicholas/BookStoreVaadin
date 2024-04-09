@@ -3,14 +3,14 @@ package org.nicholas.bookstorevaadin.views.me;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.router.PageTitle;
@@ -19,15 +19,17 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.Lumo;
 import jakarta.annotation.security.PermitAll;
 import org.nicholas.bookstorevaadin.exceptions.PasswordFormatException;
-import org.nicholas.bookstorevaadin.repository.OrderRepository;
 import org.nicholas.bookstorevaadin.security.details.StoreUserDetails;
 import org.nicholas.bookstorevaadin.security.models.StoreUser;
 import org.nicholas.bookstorevaadin.security.models.dto.StoreUserDTO;
 import org.nicholas.bookstorevaadin.security.services.StoreUserService;
 import org.nicholas.bookstorevaadin.service.AuthenticationService;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 @Route(value = "/me")
@@ -40,6 +42,9 @@ public class MeView extends FlexLayout {
     private AuthenticationService authenticationService;
     StoreUserDetails principal;
     private StoreUserService storeUserService;
+    private MultiFileMemoryBuffer buffer;
+
+    private static final String USERS_IMAGES_PATH = "src/main/resources/static/images/users";
 
     public MeView(/*@Autowired OrderRepository orderRepository,*/ AuthenticationService authenticationService, StoreUserService storeUserService) {
 //        this.orderRepository = orderRepository;
@@ -93,6 +98,15 @@ public class MeView extends FlexLayout {
             changeUsernameDialog.open();
         });
 
+        Button changePic = new Button("Change picture");
+        changePic.getStyle().setMargin("auto");
+
+        changePic.addClickListener(event -> {
+            Dialog changePicDialog = new Dialog("Change you picture...");
+            changePicDialog.add(getChangePictureLayout(changePicDialog));
+            changePicDialog.open();
+        });
+
 
         Span role = new Span("Current role: " + ((List)principal.getAuthorities()).get(0).toString().replace("ROLE_", ""));
 
@@ -107,7 +121,7 @@ public class MeView extends FlexLayout {
         userData.add(username, role, costumer);
         if (principal.getUser().getRoles()!=null && !principal.getUser().getRoles().contains("ROLE_MANAGER") && !principal.getUser().getRoles().contains("ROLE_ADMIN"))
             userData.add(orders);
-        userData.add(changeUsername, passwordRefresh);
+        userData.add(changeUsername, passwordRefresh, changePic);
 
         add(userData);
 
@@ -210,6 +224,46 @@ public class MeView extends FlexLayout {
         return verticalLayout;
     }
 
+    private VerticalLayout getChangePictureLayout(Dialog dialog) {
+        VerticalLayout verticalLayout = new VerticalLayout(Alignment.STRETCH);
+
+        FlexLayout photo = new FlexLayout();
+        photo.setFlexDirection(FlexDirection.COLUMN);
+
+        Span choosePhotoLabel = new Span("Choose new photo:");
+        buffer = new MultiFileMemoryBuffer();
+        Upload image = new Upload(buffer);
+        image.setAcceptedFileTypes("image/png", "image/jpeg");
+
+        AtomicReference<String> imageName = new AtomicReference<>("");
+        image.addSucceededListener(event -> {
+            imageName.set(event.getFileName());
+        });
+
+        photo.add(choosePhotoLabel, image);
+
+        Button change = new Button("Change!");
+        change.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        verticalLayout.getStyle().set("width", "25rem").set("max-width", "100%");
+        verticalLayout.add(photo, change);
+
+        change.addClickListener(event -> {
+            if (!imageName.get().equals("")){
+                principal.getUser().setImage(imageName.get());
+                storeUserService.update(principal.getUser().getId(), principal.getUser());
+                saveUploadedFileTo(imageName.get(), USERS_IMAGES_PATH+"/");
+                dialog.close();
+                showSuccess("Image has been updated Successfully!");
+            } else {
+                dialog.close();
+            }
+        });
+
+        return verticalLayout;
+    }
+
+
     private void showSuccess(String message){
         Dialog success = new Dialog("Successo!");
         VerticalLayout layout = new VerticalLayout(Alignment.CENTER);
@@ -225,5 +279,24 @@ public class MeView extends FlexLayout {
         success.add(layout);
 
         success.open();
+    }
+
+    private void saveUploadedFileTo(String image, String to) {
+        if (image != null) {
+
+            InputStream is = buffer.getInputStream(image);
+
+            try {
+                FileOutputStream fos = new FileOutputStream(to + image);
+                fos.write(is.readAllBytes());
+                fos.flush();
+
+                is.close();
+                fos.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
     }
 }
