@@ -34,6 +34,6 @@ public class MailService {
 
         mailSender.send(simpleMailMessage);
 
-        mailSender.send(simpleMailMessage);
+//        mailSender.send(simpleMailMessage);
     }
 }
